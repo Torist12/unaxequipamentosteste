@@ -4,35 +4,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Sistema de Almoxarifado - Design System
-   Estética industrial/profissional com foco em eficiência
+/* UNAX Group - Design System
+   Cores: Preto, Vermelho, Branco
 */
 
 @layer base {
   :root {
     /* Background & Surface */
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 0 0% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 0 0% 8%;
 
-    /* Primary - Azul profissional */
-    --primary: 217 91% 35%;
+    /* Primary - Vermelho UNAX */
+    --primary: 0 85% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Cinza neutro */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 25% 20%;
+    /* Secondary - Preto */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 8%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 217 91% 95%;
-    --accent-foreground: 217 91% 35%;
+    --accent: 0 85% 96%;
+    --accent-foreground: 0 85% 40%;
 
     /* Status colors */
     --success: 142 71% 45%;
@@ -44,44 +44,44 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 35%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 85% 50%;
 
     --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 220 25% 10%;
-    --sidebar-foreground: 220 10% 90%;
-    --sidebar-primary: 217 91% 55%;
+    /* Sidebar - Preto UNAX */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 85% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 220 10% 90%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 217 91% 55%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 85% 50%;
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 220 10% 95%;
+    --background: 0 0% 6%;
+    --foreground: 0 0% 95%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 220 10% 95%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 220 10% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 217 91% 55%;
+    --primary: 0 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 20%;
-    --secondary-foreground: 220 10% 90%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 220 20% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 217 50% 25%;
-    --accent-foreground: 217 91% 80%;
+    --accent: 0 50% 20%;
+    --accent-foreground: 0 85% 70%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
@@ -92,18 +92,18 @@
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 217 91% 55%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 85% 55%;
 
-    --sidebar-background: 220 25% 6%;
-    --sidebar-foreground: 220 10% 90%;
-    --sidebar-primary: 217 91% 55%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 0 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 12%;
-    --sidebar-accent-foreground: 220 10% 90%;
-    --sidebar-border: 220 20% 15%;
-    --sidebar-ring: 217 91% 55%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 12%;
+    --sidebar-ring: 0 85% 55%;
   }
 }
 
@@ -114,6 +114,7 @@
 
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -137,28 +138,59 @@
 
   /* Card hover effect */
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20;
+    @apply transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5;
   }
 
   /* QR Code container */
   .qr-container {
-    @apply bg-white p-4 rounded-lg shadow-sm border;
+    @apply bg-white p-4 rounded-xl shadow-sm border;
+  }
+
+  /* Mobile bottom nav */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border backdrop-blur-lg bg-opacity-95;
+  }
+
+  .mobile-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-3 text-muted-foreground transition-colors;
+  }
+
+  .mobile-nav-item.active {
+    @apply text-primary;
   }
 }
 
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
   }
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Safe area for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 }

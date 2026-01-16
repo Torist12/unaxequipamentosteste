@@ -30,6 +30,7 @@ import { useUsers, useCreateUser, useDeleteUser } from '@/hooks/useUsers';
 import { useDepartments } from '@/hooks/useDepartments';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { userSchema } from '@/lib/validation';
+import { DEPARTMENTS } from '@/lib/departments';
 import { Plus, Trash2, Users, Search, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -146,13 +147,15 @@ export default function UsersPage() {
                     value={formData.department_id}
                     onValueChange={(value) => setFormData({ ...formData, department_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Selecione um departamento" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                      ))}
+                    <SelectContent className="rounded-xl">
+                      {departments
+                        .filter(dept => DEPARTMENTS.includes(dept.name as typeof DEPARTMENTS[number]))
+                        .map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -198,14 +201,16 @@ export default function UsersPage() {
                 />
               </div>
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px] rounded-xl">
                   <SelectValue placeholder="Filtrar por departamento" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="all">Todos os departamentos</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                  ))}
+                  {departments
+                    .filter(dept => DEPARTMENTS.includes(dept.name as typeof DEPARTMENTS[number]))
+                    .map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

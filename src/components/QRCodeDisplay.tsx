@@ -48,13 +48,18 @@ export function QRCodeDisplay({ value, label, patrimony, size = 200 }: QRCodeDis
         ctx.fillStyle = '#1a1a1a';
         ctx.font = 'bold 14px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(label, canvas.width / 2, size + padding + 25);
+        ctx.fillText(label, canvas.width / 2, size + padding + 20);
+        
+        // ID do equipamento
+        ctx.font = '11px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#444444';
+        ctx.fillText(`ID: ${value}`, canvas.width / 2, size + padding + 38);
         
         // Patrimônio
         if (patrimony) {
-          ctx.font = '12px Inter, system-ui, sans-serif';
+          ctx.font = '11px Inter, system-ui, sans-serif';
           ctx.fillStyle = '#666666';
-          ctx.fillText(`PAT: ${patrimony}`, canvas.width / 2, size + padding + 45);
+          ctx.fillText(`PAT: ${patrimony}`, canvas.width / 2, size + padding + 54);
         }
         
         resolve(canvas.toDataURL('image/png'));

@@ -30,7 +30,7 @@ export function Sidebar() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-sidebar border-b border-sidebar-border flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <img src={logoUnax} alt="UNAX Group" className="h-8 w-auto" />
+          <img src={logoUnax} alt="UNAX Group" className="h-10 w-auto" />
         </div>
         <Button
           variant="ghost"
@@ -57,7 +57,7 @@ export function Sidebar() {
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-          <img src={logoUnax} alt="UNAX Group" className="h-9 w-auto" />
+          <img src={logoUnax} alt="UNAX Group" className="h-11 w-auto transition-transform hover:scale-105" />
         </div>
         
         <nav className="flex flex-col gap-1 p-4">

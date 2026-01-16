@@ -28,10 +28,11 @@ import {
 } from '@/components/ui/dialog';
 import { useEquipment, useCreateEquipment, useDeleteEquipment, useUpdateEquipment } from '@/hooks/useEquipment';
 import { useCategories } from '@/hooks/useCategories';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { equipmentSchema } from '@/lib/validation';
-import { Plus, Trash2, Package, Search, AlertCircle } from 'lucide-react';
+import { generateEquipmentReport } from '@/lib/pdfReport';
+import { Plus, Trash2, Package, Search, AlertCircle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EquipmentPage() {
@@ -92,7 +93,7 @@ export default function EquipmentPage() {
   const handleStatusChange = async (id: string, newStatus: string) => {
     await updateEquipment.mutateAsync({ 
       id, 
-      status: newStatus as 'Disponível' | 'Em uso' | 'Manutenção',
+      status: newStatus as 'Disponível' | 'Em uso' | 'Manutenção' | 'Embarcado',
       current_user_id: newStatus === 'Disponível' ? null : undefined
     });
   };
@@ -195,10 +196,10 @@ export default function EquipmentPage() {
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Disponível">Disponível</SelectItem>
-                      <SelectItem value="Em uso">Em uso</SelectItem>
-                      <SelectItem value="Manutenção">Manutenção</SelectItem>
+                    <SelectContent className="rounded-xl">
+                      {EQUIPMENT_STATUSES.map((status) => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,11 +230,11 @@ export default function EquipmentPage() {
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="Disponível">Disponível</SelectItem>
-                  <SelectItem value="Em uso">Em uso</SelectItem>
-                  <SelectItem value="Manutenção">Manutenção</SelectItem>
+                  {EQUIPMENT_STATUSES.map((status) => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -286,10 +287,10 @@ export default function EquipmentPage() {
                               <SelectTrigger className="w-[130px] h-8">
                                 <StatusBadge status={eq.status} />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Disponível">Disponível</SelectItem>
-                                <SelectItem value="Em uso">Em uso</SelectItem>
-                                <SelectItem value="Manutenção">Manutenção</SelectItem>
+                              <SelectContent className="rounded-xl">
+                                {EQUIPMENT_STATUSES.map((status) => (
+                                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </TableCell>

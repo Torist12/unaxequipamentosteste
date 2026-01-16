@@ -26,7 +26,7 @@ export interface Equipment {
   name: string;
   category_id: string | null;
   patrimony_number: string;
-  status: 'Disponível' | 'Em uso' | 'Manutenção';
+  status: 'Disponível' | 'Em uso' | 'Manutenção' | 'Embarcado';
   qr_code: string;
   current_user_id: string | null;
   created_at: string;

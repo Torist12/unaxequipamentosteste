@@ -7,10 +7,12 @@ import {
   QrCode, 
   History,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import logoUnax from '@/assets/logo-unax.png';
 
 const navItems = [
@@ -24,6 +26,11 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
   
   return (
     <>
@@ -32,14 +39,24 @@ export function Sidebar() {
         <div className="flex items-center gap-3">
           <img src={logoUnax} alt="UNAX Group" className="h-10 w-auto" />
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-sidebar-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground hover:text-destructive"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground"
+            onClick={() => setMobileOpen(!mobileOpen)}
+          >
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+        </div>
       </header>
 
       {/* Mobile Overlay */}
@@ -82,7 +99,15 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="absolute bottom-4 left-4 right-4 space-y-3">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 rounded-xl"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+            Sair
+          </Button>
           <p className="text-xs text-sidebar-foreground/40 text-center">
             Sistema de Almoxarifado
           </p>

@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useEquipment } from '@/hooks/useEquipment';
 import { useUsers } from '@/hooks/useUsers';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { Package, Users, ArrowRightLeft, CheckCircle, AlertCircle, Wrench, Filter } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Package, Users, ArrowRightLeft, CheckCircle, AlertCircle, Wrench, Filter, FileText, Ship } from 'lucide-react';
+import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import logoIcon from '@/assets/logo-icon.png';
+import { generateEquipmentReport } from '@/lib/pdfReport';
 import {
   Select,
   SelectContent,
@@ -25,21 +27,36 @@ export default function Dashboard() {
   const { data: categories = [] } = useCategories();
   
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  const filteredEquipment = categoryFilter === 'all' 
-    ? equipment 
-    : equipment.filter(e => e.category_id === categoryFilter);
+  const filteredEquipment = equipment.filter(e => {
+    const matchesCategory = categoryFilter === 'all' || e.category_id === categoryFilter;
+    const matchesStatus = statusFilter === 'all' || e.status === statusFilter;
+    return matchesCategory && matchesStatus;
+  });
   
-  const availableCount = filteredEquipment.filter(e => e.status === 'Disponível').length;
-  const inUseCount = filteredEquipment.filter(e => e.status === 'Em uso').length;
-  const maintenanceCount = filteredEquipment.filter(e => e.status === 'Manutenção').length;
+  const availableCount = equipment.filter(e => e.status === 'Disponível').length;
+  const inUseCount = equipment.filter(e => e.status === 'Em uso').length;
+  const maintenanceCount = equipment.filter(e => e.status === 'Manutenção').length;
+  const shippedCount = equipment.filter(e => e.status === 'Embarcado').length;
   
   const recentTransactions = transactions.slice(0, 5);
-  const equipmentInUse = filteredEquipment.filter(e => e.status === 'Em uso').slice(0, 5);
+  const equipmentInUse = filteredEquipment.filter(e => e.status === 'Em uso' || e.status === 'Embarcado').slice(0, 5);
 
-  const availabilityRate = filteredEquipment.length > 0 
-    ? Math.round((availableCount / filteredEquipment.length) * 100) 
+  const availabilityRate = equipment.length > 0 
+    ? Math.round((availableCount / equipment.length) * 100) 
     : 0;
+
+  const handleGeneratePDF = () => {
+    const categoryName = categoryFilter !== 'all' 
+      ? categories.find(c => c.id === categoryFilter)?.name 
+      : undefined;
+    
+    generateEquipmentReport(filteredEquipment, {
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      category: categoryName,
+    });
+  };
 
   return (
     <MainLayout>
@@ -54,11 +71,11 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {/* Category Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px] rounded-xl">
+              <SelectTrigger className="w-[150px] rounded-xl">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -68,19 +85,39 @@ export default function Dashboard() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] rounded-xl">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="all">Todos status</SelectItem>
+                {EQUIPMENT_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              variant="outline" 
+              className="gap-2 rounded-xl"
+              onClick={handleGeneratePDF}
+              disabled={filteredEquipment.length === 0}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Relatório PDF</span>
+            </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           <Card className="card-hover rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total Equipamentos</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground hidden sm:block" />
             </CardHeader>
             <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-              <div className="text-xl sm:text-2xl font-bold">{filteredEquipment.length}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">cadastrados</p>
+              <div className="text-xl sm:text-2xl font-bold">{equipment.length}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">equipamentos</p>
             </CardContent>
           </Card>
           
@@ -106,6 +143,17 @@ export default function Dashboard() {
             </CardContent>
           </Card>
           
+          <Card className="card-hover rounded-2xl border-l-4 border-l-blue-500">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-xs sm:text-sm font-medium">Embarcado</CardTitle>
+              <Ship className="h-4 w-4 text-blue-500 hidden sm:block" />
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{shippedCount}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">em campo</p>
+            </CardContent>
+          </Card>
+          
           <Card className="card-hover rounded-2xl border-l-4 border-l-destructive">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
               <CardTitle className="text-xs sm:text-sm font-medium">Manutenção</CardTitle>
@@ -124,7 +172,7 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Package className="h-5 w-5 text-primary" />
-                Equipamentos em Uso
+                Equipamentos em Uso / Embarcados
               </CardTitle>
             </CardHeader>
             <CardContent>

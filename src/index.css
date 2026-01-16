@@ -136,6 +136,10 @@
     @apply bg-destructive/10 text-destructive border-destructive/30;
   }
 
+  .status-shipped {
+    @apply bg-blue-500/10 text-blue-600 border-blue-500/30;
+  }
+
   /* Card hover effect */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5;

@@ -31,9 +31,9 @@ import { useCategories } from '@/hooks/useCategories';
 import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
 import { equipmentSchema } from '@/lib/validation';
-import { generateEquipmentReport } from '@/lib/pdfReport';
-import { Plus, Trash2, Package, Search, AlertCircle, FileText } from 'lucide-react';
+import { Plus, Trash2, Package, Search, AlertCircle, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Equipment } from '@/types/database';
 
 export default function EquipmentPage() {
   const { data: equipment = [], isLoading } = useEquipment();
@@ -46,6 +46,13 @@ export default function EquipmentPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    name: string;
+    patrimony_number: string;
+    category_id: string;
+  }>({ name: '', patrimony_number: '', category_id: '' });
+  
   const [formData, setFormData] = useState({
     name: '',
     category_id: '',
@@ -104,6 +111,43 @@ export default function EquipmentPage() {
     }
   };
 
+  const startEditing = (eq: Equipment) => {
+    setEditingId(eq.id);
+    setEditFormData({
+      name: eq.name,
+      patrimony_number: eq.patrimony_number,
+      category_id: eq.category_id || '',
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditFormData({ name: '', patrimony_number: '', category_id: '' });
+  };
+
+  const saveEditing = async (id: string) => {
+    if (!editFormData.name.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+    if (!editFormData.patrimony_number.trim()) {
+      toast.error('Número de patrimônio é obrigatório');
+      return;
+    }
+
+    try {
+      await updateEquipment.mutateAsync({
+        id,
+        name: editFormData.name,
+        patrimony_number: editFormData.patrimony_number.toUpperCase(),
+        category_id: editFormData.category_id || null,
+      });
+      setEditingId(null);
+    } catch (error) {
+      // Error handled by mutation
+    }
+  };
+
   const filteredEquipment = equipment.filter((eq) => {
     const searchLower = search.toLowerCase();
     const matchesSearch = eq.name.toLowerCase().includes(searchLower) ||
@@ -153,7 +197,7 @@ export default function EquipmentPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="patrimony">Número de Patrimônio *</Label>
+                  <Label htmlFor="patrimony">Número de Patrimônio (ID) *</Label>
                   <Input
                     id="patrimony"
                     value={formData.patrimony_number}
@@ -219,7 +263,7 @@ export default function EquipmentPage() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome ou patrimônio..."
+                  placeholder="Buscar por nome ou ID..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -266,7 +310,7 @@ export default function EquipmentPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Nome</TableHead>
-                        <TableHead>Patrimônio</TableHead>
+                        <TableHead>ID (Patrimônio)</TableHead>
                         <TableHead>Categoria</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Responsável</TableHead>
@@ -276,13 +320,54 @@ export default function EquipmentPage() {
                     <TableBody>
                       {filteredEquipment.map((eq) => (
                         <TableRow key={eq.id} className="animate-fade-in">
-                          <TableCell className="font-medium">{eq.name}</TableCell>
-                          <TableCell className="font-mono text-sm">{eq.patrimony_number}</TableCell>
-                          <TableCell>{eq.category?.name || '-'}</TableCell>
+                          <TableCell className="font-medium">
+                            {editingId === eq.id ? (
+                              <Input
+                                value={editFormData.name}
+                                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                                className="h-8 w-[150px]"
+                                maxLength={100}
+                              />
+                            ) : (
+                              eq.name
+                            )}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {editingId === eq.id ? (
+                              <Input
+                                value={editFormData.patrimony_number}
+                                onChange={(e) => setEditFormData({ ...editFormData, patrimony_number: e.target.value.toUpperCase() })}
+                                className="h-8 w-[120px]"
+                                maxLength={50}
+                              />
+                            ) : (
+                              eq.patrimony_number
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingId === eq.id ? (
+                              <Select
+                                value={editFormData.category_id}
+                                onValueChange={(value) => setEditFormData({ ...editFormData, category_id: value })}
+                              >
+                                <SelectTrigger className="h-8 w-[120px]">
+                                  <SelectValue placeholder="Categoria" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((cat) => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              eq.category?.name || '-'
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Select
                               value={eq.status}
                               onValueChange={(value) => handleStatusChange(eq.id, value)}
+                              disabled={editingId === eq.id}
                             >
                               <SelectTrigger className="w-[130px] h-8">
                                 <StatusBadge status={eq.status} />
@@ -297,19 +382,51 @@ export default function EquipmentPage() {
                           <TableCell>{eq.current_user?.name || '-'}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <QRCodeDisplay 
-                                value={eq.qr_code} 
-                                label={eq.name} 
-                                patrimony={eq.patrimony_number}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDelete(eq.id, eq.name)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {editingId === eq.id ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-success hover:text-success hover:bg-success/10"
+                                    onClick={() => saveEditing(eq.id)}
+                                    disabled={updateEquipment.isPending}
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={cancelEditing}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => startEditing(eq)}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <QRCodeDisplay 
+                                    value={eq.qr_code} 
+                                    label={eq.name} 
+                                    patrimony={eq.patrimony_number}
+                                  />
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleDelete(eq.id, eq.name)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -339,6 +456,14 @@ export default function EquipmentPage() {
                           {eq.category?.name || '-'}
                         </div>
                         <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => startEditing(eq)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
                           <QRCodeDisplay 
                             value={eq.qr_code} 
                             label={eq.name}

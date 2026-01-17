@@ -32,7 +32,17 @@ export function useCreateEquipment() {
       patrimony_number: string;
       status: string;
     }) => {
-      const qr_code = `EQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      // Check for duplicate patrimony number
+      const { data: existing, error: checkError } = await supabase
+        .from('equipment')
+        .select('id')
+        .eq('patrimony_number', data.patrimony_number)
+        .maybeSingle();
+      
+      if (checkError) throw checkError;
+      if (existing) throw new Error('Já existe um equipamento com este número de patrimônio');
+      
+      const qr_code = `EQ-${data.patrimony_number}`;
       
       const { data: result, error } = await supabase
         .from('equipment')
@@ -58,6 +68,22 @@ export function useUpdateEquipment() {
   
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Equipment> & { id: string }) => {
+      // If updating patrimony_number, check for duplicates and update qr_code
+      if (data.patrimony_number) {
+        const { data: existing, error: checkError } = await supabase
+          .from('equipment')
+          .select('id')
+          .eq('patrimony_number', data.patrimony_number)
+          .neq('id', id)
+          .maybeSingle();
+        
+        if (checkError) throw checkError;
+        if (existing) throw new Error('Já existe um equipamento com este número de patrimônio');
+        
+        // Update qr_code to match new patrimony
+        data.qr_code = `EQ-${data.patrimony_number}`;
+      }
+      
       const { error } = await supabase
         .from('equipment')
         .update(data)
@@ -67,6 +93,10 @@ export function useUpdateEquipment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
+      toast.success('Equipamento atualizado!');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao atualizar: ${error.message}`);
     },
   });
 }

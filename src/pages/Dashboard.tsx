@@ -6,12 +6,14 @@ import { useEquipment } from '@/hooks/useEquipment';
 import { useUsers } from '@/hooks/useUsers';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCategories } from '@/hooks/useCategories';
-import { Package, Users, ArrowRightLeft, CheckCircle, AlertCircle, Wrench, Filter, FileText, Ship } from 'lucide-react';
+import { Package, Users, ArrowRightLeft, CheckCircle, AlertCircle, Wrench, Filter, FileText, Ship, FileSpreadsheet, Printer } from 'lucide-react';
 import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import logoIcon from '@/assets/logo-icon.png';
+import logoFull from '@/assets/logo-unax.png';
 import { generateEquipmentReport } from '@/lib/pdfReport';
+import { generateEquipmentSpreadsheet, generatePrintableSpreadsheet } from '@/lib/excelReport';
 import {
   Select,
   SelectContent,
@@ -56,6 +58,31 @@ export default function Dashboard() {
       status: statusFilter !== 'all' ? statusFilter : undefined,
       category: categoryName,
     });
+  };
+
+  const handleGenerateExcel = () => {
+    const categoryName = categoryFilter !== 'all' 
+      ? categories.find(c => c.id === categoryFilter)?.name 
+      : undefined;
+    
+    generateEquipmentSpreadsheet(filteredEquipment, {
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      category: categoryName,
+    });
+  };
+
+  const handlePrint = () => {
+    const categoryName = categoryFilter !== 'all' 
+      ? categories.find(c => c.id === categoryFilter)?.name 
+      : undefined;
+    
+    // Get full URL for logo
+    const logoUrl = new URL(logoFull, window.location.origin).href;
+    
+    generatePrintableSpreadsheet(filteredEquipment, {
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      category: categoryName,
+    }, logoUrl);
   };
 
   return (
@@ -103,7 +130,25 @@ export default function Dashboard() {
               disabled={filteredEquipment.length === 0}
             >
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Relatório PDF</span>
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="gap-2 rounded-xl"
+              onClick={handleGenerateExcel}
+              disabled={filteredEquipment.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span className="hidden sm:inline">Planilha</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="gap-2 rounded-xl"
+              onClick={handlePrint}
+              disabled={filteredEquipment.length === 0}
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Imprimir</span>
             </Button>
           </div>
         </div>

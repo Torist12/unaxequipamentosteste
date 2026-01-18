@@ -46,6 +46,7 @@ export default function UsersPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
+    qr_code: '',
     department_id: '',
     role: '',
   });
@@ -76,11 +77,13 @@ export default function UsersPage() {
 
     try {
       await createUser.mutateAsync({
-        ...formData,
+        name: formData.name,
+        role: formData.role,
         department_id: formData.department_id || null,
+        qr_code: formData.qr_code.trim() ? formData.qr_code.trim().toUpperCase() : undefined,
       });
       setIsOpen(false);
-      setFormData({ name: '', department_id: '', role: '' });
+      setFormData({ name: '', qr_code: '', department_id: '', role: '' });
       setErrors({});
     } catch (error) {
       // Error handled by mutation
@@ -139,6 +142,34 @@ export default function UsersPage() {
                       {errors.name}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="qr_code">ID do Usuário (QR) (opcional)</Label>
+                  <Input
+                    id="qr_code"
+                    value={formData.qr_code}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        qr_code: e.target.value.toUpperCase().replace(/\s+/g, ''),
+                      })
+                    }
+                    placeholder="USR-0001"
+                    maxLength={100}
+                    className={errors.qr_code ? 'border-destructive' : ''}
+                    inputMode="text"
+                    autoCapitalize="characters"
+                  />
+                  {errors.qr_code && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.qr_code}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Se deixar vazio, o sistema gera automaticamente.
+                  </p>
                 </div>
                 
                 <div className="space-y-2">

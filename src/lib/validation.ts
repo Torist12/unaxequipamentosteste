@@ -29,14 +29,20 @@ export const userSchema = z.object({
     .max(100, 'Nome deve ter no máximo 100 caracteres')
     .trim()
     .refine((val) => !/[<>\"'&]/.test(val), 'Caracteres especiais não permitidos'),
-  
+
   role: z
     .string()
     .min(2, 'Cargo deve ter pelo menos 2 caracteres')
     .max(50, 'Cargo deve ter no máximo 50 caracteres')
     .trim()
     .refine((val) => !/[<>\"'&]/.test(val), 'Caracteres especiais não permitidos'),
-  
+
+  qr_code: z
+    .string()
+    .max(100, 'ID deve ter no máximo 100 caracteres')
+    .trim()
+    .refine((val) => val === '' || /^USR-[\w-]+$/.test(val), 'Formato de ID inválido (use USR-...)'),
+
   department_id: z.string().optional(),
 });
 

@@ -29,15 +29,35 @@ export function useCreateUser() {
       name: string;
       department_id: string | null;
       role: string;
+      qr_code?: string;
     }) => {
-      const qr_code = `USR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+      const providedQr = (data.qr_code || '').trim().toUpperCase();
+
+      let qr_code = providedQr;
+
+      // If provided, validate uniqueness to avoid duplicates
+      if (qr_code) {
+        const { data: existing, error: checkError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('qr_code', qr_code)
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+        if (existing) throw new Error('Já existe um usuário com este ID');
+      } else {
+        // Default: generate a reasonably unique ID
+        qr_code = `USR-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`.toUpperCase();
+      }
+
+      const { qr_code: _ignore, ...insertData } = data;
+
       const { data: result, error } = await supabase
         .from('users')
-        .insert({ ...data, qr_code })
+        .insert({ ...insertData, qr_code })
         .select()
         .single();
-      
+
       if (error) throw error;
       return result;
     },

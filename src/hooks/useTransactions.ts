@@ -90,7 +90,7 @@ export function useReturn() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (equipmentQr: string) => {
+    mutationFn: async ({ equipmentQr, userQr }: { equipmentQr: string; userQr: string }) => {
       // Buscar equipamento
       const { data: equipment, error: eqError } = await supabase
         .from('equipment')
@@ -106,12 +106,32 @@ export function useReturn() {
         throw new Error('Equipamento não está em uso');
       }
       
+      if (!equipment.current_user_id) {
+        throw new Error('Equipamento não possui usuário associado');
+      }
+      
+      // Buscar usuário que está devolvendo
+      const { data: user, error: usrError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('qr_code', userQr)
+        .single();
+      
+      if (usrError || !user) {
+        throw new Error('Usuário não encontrado');
+      }
+      
+      // Validar que o usuário que está devolvendo é o mesmo que retirou
+      if (user.id !== equipment.current_user_id) {
+        throw new Error('O usuário que está devolvendo não é o responsável pelo equipamento');
+      }
+      
       // Registrar transação
       const { error: txError } = await supabase
         .from('transactions')
         .insert({
           equipment_id: equipment.id,
-          user_id: equipment.current_user_id!,
+          user_id: user.id,
           type: 'devolucao',
         });
       

@@ -3,6 +3,11 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, CameraOff, RefreshCw } from 'lucide-react';
+import {
+  getCameraErrorMessage,
+  requestCameraPermission,
+  stopCameraStream,
+} from '@/lib/camera';
 
 interface QRScannerProps {
   onScan: (result: string) => void;
@@ -49,8 +54,22 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
     }
   }, []);
 
+  const pickPreferredCameraId = useCallback(async () => {
+    const cameras = await Html5Qrcode.getCameras();
+    if (!cameras || cameras.length === 0) return null;
+
+    // Labels só aparecem após permissão; por isso pedimos permissão antes.
+    const labels = cameras.map((c) => ({ ...c, label: (c.label || '').toLowerCase() }));
+    const backKeywords = ['back', 'rear', 'environment', 'traseira'];
+
+    const backCam = labels.find((c) => backKeywords.some((k) => c.label.includes(k)));
+    return (backCam?.id ?? cameras[cameras.length - 1]?.id) || null;
+  }, []);
+
   const startScanner = async () => {
     if (isInitializing || isScanning) return;
+
+    let permissionStream: MediaStream | null = null;
 
     try {
       setError(null);
@@ -60,11 +79,11 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
       await stopScanner();
 
       // Give browser time to release camera resources
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 250));
 
       if (!mountedRef.current) return;
 
-      // Basic capability checks (better errors on mobile)
+      // Capability checks (clear errors on mobile/desktop)
       if (!window.isSecureContext) {
         throw new Error('SecurityError: insecure_context');
       }
@@ -74,47 +93,31 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
 
       const containerId = containerIdRef.current;
       const container = document.getElementById(containerId);
-
-      if (!container) {
-        throw new Error('Container não encontrado');
-      }
+      if (!container) throw new Error('Container não encontrado');
 
       // Ensure container has dimensions before starting
       container.style.minHeight = '300px';
       container.style.width = '100%';
       container.style.display = 'block';
 
-      // iOS/Safari: trigger permission prompt first, then release immediately
+      // 1) Solicitar permissão explicitamente (deve ocorrer após clique)
       try {
-        const preflight = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } },
-          audio: false,
-        });
-        preflight.getTracks().forEach((t) => t.stop());
-        await new Promise((resolve) => setTimeout(resolve, 150));
-      } catch {
-        // Permission errors will be handled by the html5-qrcode start attempt below
+        permissionStream = await requestCameraPermission();
+      } finally {
+        // Libera imediatamente; o scanner abrirá a câmera de verdade em seguida.
+        stopCameraStream(permissionStream);
+        permissionStream = null;
       }
+
+      // Pequena pausa para garantir liberação da câmera em alguns navegadores mobile.
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       if (!mountedRef.current) return;
 
-      const ua = navigator.userAgent || '';
-      const isIOS =
-        /iPad|iPhone|iPod/.test(ua) ||
-        (navigator.platform === 'MacIntel' && (navigator as any).maxTouchPoints > 1);
-
-      // Create scanner instance
-      const html5QrCode = new Html5Qrcode(containerId, {
-        verbose: false,
-        experimentalFeatures: {
-          // iOS can be unstable with BarcodeDetector; prefer the default decoder
-          useBarCodeDetectorIfSupported: !isIOS,
-        },
-      });
-
+      // 2) Iniciar html5-qrcode priorizando câmera traseira via deviceId (mais compatível)
+      const html5QrCode = new Html5Qrcode(containerId, { verbose: false });
       scannerRef.current = html5QrCode;
 
-      // Calculate optimal qrbox size
       const containerWidth = container.clientWidth || 280;
       const qrboxSize = Math.min(220, Math.floor(containerWidth * 0.7));
 
@@ -125,39 +128,37 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
       };
 
       const onSuccess = (decodedText: string) => {
-        console.log('QR Code scanned:', decodedText);
         onScan(decodedText);
         stopScanner();
       };
 
-      // Try with facingMode first (best for mobile), fallback to cameraId
-      try {
-        await html5QrCode.start(
-          { facingMode: { ideal: 'environment' } },
-          config,
-          onSuccess,
-          () => {}
-        );
-      } catch (firstErr) {
-        try {
-          const cameras = await Html5Qrcode.getCameras();
-          const cameraId = cameras?.[cameras.length - 1]?.id;
-          if (!cameraId) throw firstErr;
+      const cameras = await Html5Qrcode.getCameras();
+      if (!cameras || cameras.length === 0) {
+        throw Object.assign(new Error('NotFoundError: no_camera'), { name: 'NotFoundError' });
+      }
 
-          await html5QrCode.start(cameraId, config, onSuccess, () => {});
-        } catch {
-          throw firstErr;
+      const preferredId = await pickPreferredCameraId();
+      const fallbackId = cameras[0]?.id;
+
+      try {
+        await html5QrCode.start(preferredId ?? fallbackId, config, onSuccess, () => {});
+      } catch (err1) {
+        // Se a câmera preferida falhar, tenta a primeira disponível.
+        if (fallbackId && preferredId && fallbackId !== preferredId) {
+          await html5QrCode.start(fallbackId, config, onSuccess, () => {});
+        } else {
+          throw err1;
         }
       }
 
-      // iOS needs playsinline to keep video embedded
+      // iOS/Safari: playsinline para não forçar fullscreen e permitir autoplay.
       setTimeout(() => {
         const root = document.getElementById(containerId);
         const video = root?.querySelector('video') as HTMLVideoElement | null;
         if (video) {
+          video.setAttribute('autoplay', 'true');
           video.setAttribute('playsinline', 'true');
           video.setAttribute('webkit-playsinline', 'true');
-          (video as any).playsInline = true;
           video.muted = true;
           video.autoplay = true;
         }
@@ -169,6 +170,8 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
       }
     } catch (err: any) {
       console.error('Camera initialization error:', err);
+
+      stopCameraStream(permissionStream);
 
       if (!mountedRef.current) return;
 
@@ -184,26 +187,7 @@ export function QRScanner({ onScan, label = 'Escaneie o QR Code' }: QRScannerPro
         scannerRef.current = null;
       }
 
-      let errorMsg = 'Não foi possível acessar a câmera.';
-      const errorString = err?.message || err?.name || String(err);
-
-      if (errorString.includes('insecure_context') || errorString.includes('SecurityError')) {
-        errorMsg = 'Acesso à câmera bloqueado. Abra pelo link HTTPS (não funciona em páginas não seguras).';
-      } else if (errorString.includes('NotSupportedError') || errorString.includes('mediaDevices')) {
-        errorMsg = 'Seu navegador não suporta câmera neste modo. Tente Safari/Chrome atualizado.';
-      } else if (errorString.includes('NotAllowedError') || errorString.includes('Permission')) {
-        errorMsg = 'Permissão de câmera negada. Permita o acesso à câmera e recarregue a página.';
-      } else if (errorString.includes('NotFoundError') || errorString.includes('Requested device not found')) {
-        errorMsg = 'Nenhuma câmera encontrada no dispositivo.';
-      } else if (errorString.includes('NotReadableError') || errorString.includes('Could not start')) {
-        errorMsg = 'Câmera pode estar em uso por outro aplicativo. Feche outros apps e tente novamente.';
-      } else if (errorString.includes('OverconstrainedError')) {
-        errorMsg = 'Configuração de câmera não suportada. Tente novamente.';
-      } else if (errorString.includes('AbortError')) {
-        errorMsg = 'Inicialização da câmera foi cancelada. Tente novamente.';
-      }
-
-      setError(errorMsg);
+      setError(getCameraErrorMessage(err));
     }
   };
 

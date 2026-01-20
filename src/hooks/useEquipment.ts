@@ -106,6 +106,29 @@ export function useDeleteEquipment() {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if equipment has active transactions (is currently in use)
+      const { data: equipment, error: eqError } = await supabase
+        .from('equipment')
+        .select('status, current_user_id')
+        .eq('id', id)
+        .single();
+      
+      if (eqError) throw eqError;
+      
+      // Prevent deletion if equipment is currently in use
+      if (equipment.status === 'Em uso' && equipment.current_user_id) {
+        throw new Error('Não é possível excluir equipamento em uso. Registre a devolução primeiro.');
+      }
+      
+      // Delete related transactions first (historical records)
+      const { error: txError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('equipment_id', id);
+      
+      if (txError) throw txError;
+      
+      // Now delete the equipment
       const { error } = await supabase
         .from('equipment')
         .delete()
@@ -115,7 +138,8 @@ export function useDeleteEquipment() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['equipment'] });
-      toast.success('Equipamento excluído!');
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success('Equipamento excluído com sucesso!');
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir: ${error.message}`);

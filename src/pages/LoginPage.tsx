@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { AlertCircle, LogIn, Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import logoUnax from '@/assets/logo-unax.png';
+import logoDark from '@/assets/logo-dark.png';
+
 const loginSchema = z.object({
   email: z.string().email('Email inválido').max(255),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(100)
@@ -71,7 +72,7 @@ export default function LoginPage() {
         <Card className="rounded-3xl shadow-2xl border-0 bg-card/95 backdrop-blur">
           <CardHeader className="space-y-6 items-center pt-10 pb-4">
             <div className="w-48 h-auto">
-              <img alt="UNAX Group" className="w-full h-auto drop-shadow-lg" src="/lovable-uploads/d90e7827-7070-48df-afe3-3e95de7650a0.png" />
+              <img alt="UNAX Group" className="w-full h-auto drop-shadow-lg" src={logoDark} />
             </div>
             <div className="text-center space-y-1">
               <h1 className="text-2xl font-bold tracking-tight">Sistema de Almoxarifado</h1>

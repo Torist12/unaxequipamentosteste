@@ -10,8 +10,8 @@ import { Package, Users, ArrowRightLeft, CheckCircle, AlertCircle, Wrench, Filte
 import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import logoIcon from '@/assets/logo-icon.png';
-import logoFull from '@/assets/logo-unax.png';
+import logoIconDark from '@/assets/logo-icon-dark.png';
+import logoDark from '@/assets/logo-dark.png';
 import { generateEquipmentReport } from '@/lib/pdfReport';
 import { generateEquipmentSpreadsheet, generatePrintableSpreadsheet } from '@/lib/excelReport';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,7 +61,7 @@ export default function Dashboard() {
     const categoryName = categoryFilter !== 'all' ? categories.find(c => c.id === categoryFilter)?.name : undefined;
 
     // Get full URL for logo
-    const logoUrl = new URL(logoFull, window.location.origin).href;
+    const logoUrl = new URL(logoDark, window.location.origin).href;
     generatePrintableSpreadsheet(filteredEquipment, {
       status: statusFilter !== 'all' ? statusFilter : undefined,
       category: categoryName
@@ -72,7 +72,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <img alt="UNAX" className="h-14 w-14 hidden sm:block transition-transform hover:scale-105" src="/lovable-uploads/4715c69b-ed93-4f84-8674-77621d122b99.png" />
+            <img alt="UNAX" className="h-14 w-14 hidden sm:block transition-transform hover:scale-105" src={logoIconDark} />
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-sm sm:text-base text-muted-foreground">Visão geral do almoxarifado</p>

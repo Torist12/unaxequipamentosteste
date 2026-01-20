@@ -13,10 +13,15 @@ export function generateEquipmentReport(
 ) {
   const doc = new jsPDF();
   
-  // Header
-  doc.setFontSize(18);
+  // Header with company name
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('Relatório de Equipamentos', 14, 22);
+  doc.setTextColor(220, 38, 38); // Red color
+  doc.text('UNAX Group', 14, 18);
+  
+  doc.setTextColor(0);
+  doc.setFontSize(14);
+  doc.text('Relatório de Equipamentos', 14, 28);
   
   // Subtitle with filters
   doc.setFontSize(10);
@@ -37,8 +42,8 @@ export function generateEquipmentReport(
     filterText = filterParts.join(' | ');
   }
   
-  doc.text(filterText, 14, 30);
-  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 36);
+  doc.text(filterText, 14, 36);
+  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 42);
   
   // Reset text color
   doc.setTextColor(0);
@@ -57,7 +62,7 @@ export function generateEquipmentReport(
   autoTable(doc, {
     head: [['ID', 'Nome', 'Categoria', 'Patrimônio', 'Status', 'Responsável']],
     body: tableData,
-    startY: 44,
+    startY: 50,
     styles: {
       fontSize: 9,
       cellPadding: 3,

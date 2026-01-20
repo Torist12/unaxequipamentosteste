@@ -26,8 +26,8 @@ export function generateEquipmentSpreadsheet(
   // Create workbook and worksheet
   const workbook = XLSX.utils.book_new();
   
-  // Create header with logo placeholder and title
-  const title = 'LEVANTAMENTO DE EQUIPAMENTOS - UNAX';
+  // Create header with title
+  const title = 'UNAX Group - LEVANTAMENTO DE EQUIPAMENTOS';
   const subtitle = generateSubtitle(filters);
   const dateStr = `Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`;
   
@@ -101,7 +101,7 @@ export function generatePrintableSpreadsheet(
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Levantamento de Equipamentos - UNAX</title>
+      <title>UNAX Group - Levantamento de Equipamentos</title>
       <style>
         @media print {
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -109,7 +109,8 @@ export function generatePrintableSpreadsheet(
         body { font-family: Arial, sans-serif; margin: 20px; }
         .header { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; }
         .logo { height: 60px; }
-        h1 { color: #dc2626; margin: 0; font-size: 24px; }
+        .brand { color: #dc2626; font-size: 28px; font-weight: bold; margin: 0; }
+        h1 { color: #1a1a1a; margin: 5px 0 0 0; font-size: 20px; }
         .subtitle { color: #666; margin: 5px 0; }
         .date { color: #888; font-size: 12px; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; }
@@ -122,6 +123,7 @@ export function generatePrintableSpreadsheet(
       <div class="header">
         ${logoUrl ? `<img src="${logoUrl}" alt="UNAX" class="logo" />` : ''}
         <div>
+          <p class="brand">UNAX Group</p>
           <h1>LEVANTAMENTO DE EQUIPAMENTOS</h1>
           <p class="subtitle">${subtitle}</p>
         </div>

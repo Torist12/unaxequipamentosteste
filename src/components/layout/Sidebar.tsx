@@ -4,7 +4,9 @@ import { LayoutDashboard, Package, Users, QrCode, History, Menu, X, LogOut } fro
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import logoUnax from '@/assets/logo-unax.png';
+import logoWhite from '@/assets/logo-white.png';
+import logoIconWhite from '@/assets/logo-icon-white.png';
+
 const navItems = [{
   to: '/',
   icon: LayoutDashboard,
@@ -39,7 +41,7 @@ export function Sidebar() {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-sidebar border-b border-sidebar-border flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <img alt="UNAX Group" className="h-10 w-auto" src="/lovable-uploads/5de23f89-5e60-434a-bb45-96eeddc68983.png" />
+          <img alt="UNAX Group" className="h-10 w-auto" src={logoWhite} />
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:text-destructive" onClick={handleLogout}>
@@ -57,7 +59,7 @@ export function Sidebar() {
       {/* Sidebar - Desktop always visible, Mobile slide-in */}
       <aside className={cn("fixed top-0 z-50 h-screen bg-sidebar border-r border-sidebar-border transition-transform duration-300", "w-64 lg:translate-x-0", mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}>
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-          <img src={logoUnax} alt="UNAX Group" className="h-11 w-auto transition-transform hover:scale-105" />
+          <img src={logoWhite} alt="UNAX Group" className="h-11 w-auto transition-transform hover:scale-105" />
         </div>
         
         <nav className="flex flex-col gap-1 p-4">

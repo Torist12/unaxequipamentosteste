@@ -76,6 +76,28 @@ export function useDeleteUser() {
   
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if user has active equipment
+      const { data: activeEquipment, error: checkError } = await supabase
+        .from('equipment')
+        .select('id, name')
+        .eq('current_user_id', id)
+        .limit(1);
+      
+      if (checkError) throw checkError;
+      
+      if (activeEquipment && activeEquipment.length > 0) {
+        throw new Error(`Usuário possui equipamento ativo: "${activeEquipment[0].name}". Registre a devolução primeiro.`);
+      }
+      
+      // Delete related transactions first (historical records)
+      const { error: txError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', id);
+      
+      if (txError) throw txError;
+      
+      // Now delete the user
       const { error } = await supabase
         .from('users')
         .delete()
@@ -85,7 +107,8 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('Usuário excluído!');
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      toast.success('Usuário excluído com sucesso!');
     },
     onError: (error: Error) => {
       toast.error(`Erro ao excluir: ${error.message}`);

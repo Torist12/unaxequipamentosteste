@@ -29,8 +29,10 @@ import {
 import { useUsers, useCreateUser, useDeleteUser } from '@/hooks/useUsers';
 import { useDepartments } from '@/hooks/useDepartments';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
+import { ExportDropdown } from '@/components/ExportDropdown';
 import { userSchema } from '@/lib/validation';
 import { DEPARTMENTS } from '@/lib/departments';
+import { generateUserPdfReport, generateUserExcelReport } from '@/lib/userReport';
 import { Plus, Trash2, Users, Search, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -104,6 +106,32 @@ export default function UsersPage() {
     return matchesSearch && matchesDepartment;
   });
 
+  const handleExportPDF = () => {
+    if (filteredUsers.length === 0) {
+      toast.error('Nenhum usuário para exportar');
+      return;
+    }
+    try {
+      generateUserPdfReport(filteredUsers);
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar PDF');
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (filteredUsers.length === 0) {
+      toast.error('Nenhum usuário para exportar');
+      return;
+    }
+    try {
+      generateUserExcelReport(filteredUsers);
+      toast.success('Planilha gerada com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar planilha');
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -114,13 +142,20 @@ export default function UsersPage() {
             <p className="text-sm sm:text-base text-muted-foreground">Gerencie os usuários do sistema</p>
           </div>
           
-          <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors({}); }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <ExportDropdown 
+              onExportPDF={handleExportPDF}
+              onExportExcel={handleExportExcel}
+              disabled={isLoading || filteredUsers.length === 0}
+            />
+            
+            <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors({}); }}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  Novo Usuário
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md mx-4">
               <DialogHeader>
                 <DialogTitle>Cadastrar Usuário</DialogTitle>
@@ -215,6 +250,7 @@ export default function UsersPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Filters */}

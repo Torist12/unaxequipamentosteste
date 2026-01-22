@@ -30,7 +30,10 @@ import { useEquipment, useCreateEquipment, useDeleteEquipment, useUpdateEquipmen
 import { useCategories } from '@/hooks/useCategories';
 import { StatusBadge, EQUIPMENT_STATUSES } from '@/components/ui/StatusBadge';
 import { QRCodeDisplay } from '@/components/QRCodeDisplay';
+import { ExportDropdown } from '@/components/ExportDropdown';
 import { equipmentSchema } from '@/lib/validation';
+import { generateEquipmentReport } from '@/lib/pdfReport';
+import { generateEquipmentSpreadsheet } from '@/lib/excelReport';
 import { Plus, Trash2, Package, Search, AlertCircle, Edit2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Equipment } from '@/types/database';
@@ -156,6 +159,32 @@ export default function EquipmentPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleExportPDF = () => {
+    if (filteredEquipment.length === 0) {
+      toast.error('Nenhum equipamento para exportar');
+      return;
+    }
+    try {
+      generateEquipmentReport(filteredEquipment, { status: statusFilter !== 'all' ? statusFilter : undefined });
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar PDF');
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (filteredEquipment.length === 0) {
+      toast.error('Nenhum equipamento para exportar');
+      return;
+    }
+    try {
+      generateEquipmentSpreadsheet(filteredEquipment, { status: statusFilter !== 'all' ? statusFilter : undefined });
+      toast.success('Planilha gerada com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar planilha');
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
@@ -166,10 +195,17 @@ export default function EquipmentPage() {
             <p className="text-sm sm:text-base text-muted-foreground">Gerencie os equipamentos do almoxarifado</p>
           </div>
           
-          <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors({}); }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <ExportDropdown 
+              onExportPDF={handleExportPDF}
+              onExportExcel={handleExportExcel}
+              disabled={isLoading || filteredEquipment.length === 0}
+            />
+            
+            <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors({}); }}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
                 Novo Equipamento
               </Button>
             </DialogTrigger>
@@ -254,6 +290,7 @@ export default function EquipmentPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Filters */}

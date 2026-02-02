@@ -178,6 +178,127 @@ export type Database = {
           },
         ]
       }
+      vehicle_trip_points: {
+        Row: {
+          id: string
+          is_stop: boolean
+          latitude: number
+          longitude: number
+          recorded_at: string
+          stop_duration_seconds: number | null
+          trip_id: string
+        }
+        Insert: {
+          id?: string
+          is_stop?: boolean
+          latitude: number
+          longitude: number
+          recorded_at?: string
+          stop_duration_seconds?: number | null
+          trip_id: string
+        }
+        Update: {
+          id?: string
+          is_stop?: boolean
+          latitude?: number
+          longitude?: number
+          recorded_at?: string
+          stop_duration_seconds?: number | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trip_points_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_trips: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          start_time: string
+          status: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          status?: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          start_time?: string
+          status?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_trips_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          current_user_id: string | null
+          id: string
+          model: string
+          plate: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_user_id?: string | null
+          id?: string
+          model: string
+          plate: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_user_id?: string | null
+          id?: string
+          model?: string
+          plate?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_current_user_id_fkey"
+            columns: ["current_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

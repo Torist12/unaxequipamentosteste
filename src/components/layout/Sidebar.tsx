@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Package, Users, QrCode, History, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Users, QrCode, History, Menu, X, LogOut, Car } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,10 @@ const navItems = [{
   to: '/equipment',
   icon: Package,
   label: 'Equipamentos'
+}, {
+  to: '/vehicles',
+  icon: Car,
+  label: 'Veículos'
 }, {
   to: '/users',
   icon: Users,

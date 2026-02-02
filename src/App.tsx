@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import EquipmentPage from "./pages/EquipmentPage";
+import VehiclesPage from "./pages/VehiclesPage";
 import UsersPage from "./pages/UsersPage";
 import MovementPage from "./pages/MovementPage";
 import HistoryPage from "./pages/HistoryPage";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/equipment" element={<ProtectedRoute><EquipmentPage /></ProtectedRoute>} />
+          <Route path="/vehicles" element={<ProtectedRoute><VehiclesPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
           <Route path="/movement" element={<ProtectedRoute><MovementPage /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />

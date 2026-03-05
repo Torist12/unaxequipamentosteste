@@ -185,8 +185,6 @@ export function TripTracker() {
     const lat = watchLat ?? initialLat;
     const lng = watchLng ?? initialLng;
 
-    if (lat === null || lng === null) return;
-
     try {
       await endTrip.mutateAsync({
         tripId: currentTrip.id,

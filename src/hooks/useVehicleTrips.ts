@@ -170,16 +170,18 @@ export function useEndTrip() {
     }: {
       tripId: string;
       vehicleId: string;
-      latitude: number;
-      longitude: number;
+      latitude?: number | null;
+      longitude?: number | null;
     }) => {
-      // Adiciona o ponto final
-      await supabase.from('vehicle_trip_points').insert({
-        trip_id: tripId,
-        latitude,
-        longitude,
-        is_stop: false,
-      });
+      // Adiciona o ponto final (se tiver coordenadas)
+      if (latitude != null && longitude != null) {
+        await supabase.from('vehicle_trip_points').insert({
+          trip_id: tripId,
+          latitude,
+          longitude,
+          is_stop: false,
+        });
+      }
 
       // Finaliza a viagem
       const { error: tripError } = await supabase

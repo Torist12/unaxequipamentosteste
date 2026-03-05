@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Vehicle, User, VehicleTripPoint } from '@/types/database';
+import { Vehicle, User, VehicleTripPoint, VehicleTrip } from '@/types/database';
 import { useAvailableVehicles } from '@/hooks/useVehicles';
 import { useUsers } from '@/hooks/useUsers';
 import {
@@ -8,6 +8,7 @@ import {
   useAddTripPoint,
   useActiveTrip,
   useTripPoints,
+  useAllActiveTrips,
 } from '@/hooks/useVehicleTrips';
 import { useGeolocation, useWatchPosition, calculateDistance } from '@/hooks/useGeolocation';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,7 @@ export function TripTracker() {
   const { data: users = [], isLoading: loadingUsers } = useUsers();
   const { data: activeTrip } = useActiveTrip(selectedVehicleId);
   const { data: tripPoints = [] } = useTripPoints(currentTrip?.id || null);
+  const { data: allActiveTrips = [], isLoading: loadingActiveTrips } = useAllActiveTrips();
 
   const startTripMutation = useStartTrip();
   const endTrip = useEndTrip();
@@ -199,6 +201,18 @@ export function TripTracker() {
       setTripDuration(0);
       lastPositionRef.current = null;
       stationaryTimeRef.current = 0;
+    } catch (error) {
+      // Toast já exibido no hook
+    }
+  };
+  const handleAdminEndTrip = async (trip: VehicleTrip) => {
+    try {
+      await endTrip.mutateAsync({
+        tripId: trip.id,
+        vehicleId: trip.vehicle_id,
+        latitude: null,
+        longitude: null,
+      });
     } catch (error) {
       // Toast já exibido no hook
     }
@@ -386,6 +400,59 @@ export function TripTracker() {
             height="400px"
           />
         </>
+      )}
+
+      {/* Painel Admin: Viagens ativas */}
+      {allActiveTrips.length > 0 && !currentTrip && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Viagens em Andamento ({allActiveTrips.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {allActiveTrips.map((trip) => {
+              const vehicle = (trip as any).vehicle;
+              const user = (trip as any).user;
+              const startTime = new Date(trip.start_time);
+              const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
+
+              return (
+                <div
+                  key={trip.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                >
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {vehicle?.plate || 'N/A'} - {vehicle?.model || 'N/A'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Responsável: {user?.name || 'N/A'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Início: {startTime.toLocaleString('pt-BR')} • Duração: {formatDuration(elapsed)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleAdminEndTrip(trip)}
+                    disabled={endTrip.isPending}
+                    className="gap-1"
+                  >
+                    {endTrip.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Square className="h-3 w-3" />
+                    )}
+                    Encerrar
+                  </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

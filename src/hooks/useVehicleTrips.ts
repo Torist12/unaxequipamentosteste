@@ -65,6 +65,26 @@ export function useActiveTrip(vehicleId: string | null) {
   });
 }
 
+export function useAllActiveTrips() {
+  return useQuery({
+    queryKey: ['active-trips-all'],
+    queryFn: async (): Promise<VehicleTrip[]> => {
+      const { data, error } = await supabase
+        .from('vehicle_trips')
+        .select(`
+          *,
+          vehicle:vehicles(id, plate, model),
+          user:users(id, name, role)
+        `)
+        .eq('status', 'Em andamento')
+        .order('start_time', { ascending: false });
+
+      if (error) throw error;
+      return (data || []) as unknown as VehicleTrip[];
+    },
+  });
+}
+
 export function useTripPoints(tripId: string | null) {
   return useQuery({
     queryKey: ['trip-points', tripId],
@@ -209,6 +229,7 @@ export function useEndTrip() {
       queryClient.invalidateQueries({ queryKey: ['vehicles'] });
       queryClient.invalidateQueries({ queryKey: ['vehicle-trips'] });
       queryClient.invalidateQueries({ queryKey: ['active-trip'] });
+      queryClient.invalidateQueries({ queryKey: ['active-trips-all'] });
       queryClient.invalidateQueries({ queryKey: ['trip-points'] });
       toast({
         title: 'Viagem finalizada!',

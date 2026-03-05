@@ -9,7 +9,7 @@ import {
   useActiveTrip,
   useTripPoints,
 } from '@/hooks/useVehicleTrips';
-import { useWatchPosition, calculateDistance } from '@/hooks/useGeolocation';
+import { useGeolocation, useWatchPosition, calculateDistance } from '@/hooks/useGeolocation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -30,6 +30,7 @@ import {
   MapPin,
   AlertCircle,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -57,11 +58,20 @@ export function TripTracker() {
   const { data: activeTrip } = useActiveTrip(selectedVehicleId);
   const { data: tripPoints = [] } = useTripPoints(currentTrip?.id || null);
 
-  const startTrip = useStartTrip();
+  const startTripMutation = useStartTrip();
   const endTrip = useEndTrip();
   const addTripPoint = useAddTripPoint();
 
-  // Callback para processar posição
+  // Geolocation for initial position (before trip starts)
+  const {
+    latitude: initialLat,
+    longitude: initialLng,
+    error: initialGeoError,
+    loading: initialGeoLoading,
+    refresh: refreshGeo,
+  } = useGeolocation();
+
+  // Callback para processar posição durante viagem
   const handlePositionChange = useCallback(
     (lat: number, lng: number) => {
       if (!currentTrip) return;
@@ -70,7 +80,6 @@ export function TripTracker() {
       let isStop = false;
       let stopDuration = 0;
 
-      // Verifica se está parado
       if (lastPositionRef.current) {
         const distance = calculateDistance(
           lastPositionRef.current.lat,
@@ -94,7 +103,6 @@ export function TripTracker() {
 
       lastPositionRef.current = { lat, lng, time: now };
 
-      // Salva o ponto
       addTripPoint.mutate({
         tripId: currentTrip.id,
         latitude: lat,
@@ -106,15 +114,21 @@ export function TripTracker() {
     [currentTrip, addTripPoint]
   );
 
+  // Watch position only used during active trip
   const {
-    latitude,
-    longitude,
-    error: geoError,
-    loading: geoLoading,
+    latitude: watchLat,
+    longitude: watchLng,
+    error: watchGeoError,
     isWatching,
     startWatching,
     stopWatching,
   } = useWatchPosition(handlePositionChange, 30000);
+
+  // Use watch position when trip is active, initial position otherwise
+  const latitude = currentTrip ? watchLat : initialLat;
+  const longitude = currentTrip ? watchLng : initialLng;
+  const geoError = currentTrip ? watchGeoError : initialGeoError;
+  const geoLoading = currentTrip ? false : initialGeoLoading;
 
   // Timer de duração
   useEffect(() => {
@@ -131,7 +145,6 @@ export function TripTracker() {
     };
   }, [currentTrip]);
 
-  // Formata duração
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -143,23 +156,22 @@ export function TripTracker() {
     return `${minutes}:${String(secs).padStart(2, '0')}`;
   };
 
-  // Inicia viagem
   const handleStartTrip = async () => {
-    if (!selectedVehicleId || !selectedUserId || latitude === null || longitude === null) {
+    if (!selectedVehicleId || !selectedUserId || initialLat === null || initialLng === null) {
       return;
     }
 
     try {
-      const trip = await startTrip.mutateAsync({
+      const trip = await startTripMutation.mutateAsync({
         vehicleId: selectedVehicleId,
         userId: selectedUserId,
-        latitude,
-        longitude,
+        latitude: initialLat,
+        longitude: initialLng,
       });
 
       setCurrentTrip({ id: trip.id, vehicleId: selectedVehicleId });
       setTripDuration(0);
-      lastPositionRef.current = { lat: latitude, lng: longitude, time: Date.now() };
+      lastPositionRef.current = { lat: initialLat, lng: initialLng, time: Date.now() };
       stationaryTimeRef.current = 0;
       startWatching();
     } catch (error) {
@@ -167,16 +179,20 @@ export function TripTracker() {
     }
   };
 
-  // Finaliza viagem
   const handleEndTrip = async () => {
-    if (!currentTrip || latitude === null || longitude === null) return;
+    if (!currentTrip) return;
+
+    const lat = watchLat ?? initialLat;
+    const lng = watchLng ?? initialLng;
+
+    if (lat === null || lng === null) return;
 
     try {
       await endTrip.mutateAsync({
         tripId: currentTrip.id,
         vehicleId: currentTrip.vehicleId,
-        latitude,
-        longitude,
+        latitude: lat,
+        longitude: lng,
       });
 
       stopWatching();
@@ -190,7 +206,6 @@ export function TripTracker() {
     }
   };
 
-  // Conta paradas
   const stopsCount = tripPoints.filter((p) => p.is_stop).length;
 
   return (
@@ -255,7 +270,12 @@ export function TripTracker() {
             {geoError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{geoError}</AlertDescription>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>{geoError}</span>
+                  <Button variant="ghost" size="sm" onClick={refreshGeo} className="ml-2">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </AlertDescription>
               </Alert>
             )}
 
@@ -266,11 +286,11 @@ export function TripTracker() {
               </Alert>
             )}
 
-            {latitude !== null && longitude !== null && (
+            {!geoLoading && !geoError && initialLat !== null && initialLng !== null && (
               <Alert>
-                <Navigation className="h-4 w-4 text-success" />
+                <Navigation className="h-4 w-4 text-green-600" />
                 <AlertDescription>
-                  GPS ativo: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                  GPS ativo: {initialLat.toFixed(6)}, {initialLng.toFixed(6)}
                 </AlertDescription>
               </Alert>
             )}
@@ -280,13 +300,13 @@ export function TripTracker() {
               disabled={
                 !selectedVehicleId ||
                 !selectedUserId ||
-                latitude === null ||
-                startTrip.isPending
+                initialLat === null ||
+                startTripMutation.isPending
               }
               className="w-full gap-2"
               size="lg"
             >
-              {startTrip.isPending ? (
+              {startTripMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Play className="h-4 w-4" />
@@ -304,7 +324,7 @@ export function TripTracker() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                   Viagem em Andamento
                 </span>
                 <span className="text-2xl font-mono">
@@ -332,7 +352,7 @@ export function TripTracker() {
                 <div className="text-center p-3 bg-muted rounded-lg">
                   <div
                     className={`h-5 w-5 mx-auto mb-1 rounded-full ${
-                      isWatching ? 'bg-success animate-pulse' : 'bg-muted-foreground'
+                      isWatching ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'
                     }`}
                   />
                   <p className="text-sm text-muted-foreground">GPS</p>
@@ -357,7 +377,7 @@ export function TripTracker() {
             </CardContent>
           </Card>
 
-          {/* Mapa com posição atual */}
+          {/* Mapa com rota e posição atual */}
           <TripMap
             points={tripPoints}
             currentPosition={
